@@ -3,7 +3,7 @@
 WYLA (What You're Looking At) tells you, well, what you're looking at, without any mods. 
 Server-side plugin equivalent to Jade. (although it is not based on code from Jade, it is 100% inspired by it).
 
-## Announcement
+## Announcement
 
 This is my first ever Minecraft plugin developped by me, not by AI only.
 What I mean is this plugin was written and debugged by me, however I did use some AI,
