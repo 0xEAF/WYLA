@@ -1,0 +1,17 @@
+# Performance mode makes updating the bossbar event-driven instead of polling-based.
+# This allows for better performance, especially on big servers, since the polling
+# happens many times a second for each player individually and uses raytracing (not the RTX kind, but still expensive).
+# The drawback is that the bossbar will not update when the block or entity looked at changes,
+# and will only change when the player breaks/kills it or moves his crosshair.
+# Some players may report this as a bug, but it is not; as such, make sure to know of this before enabling it.
+# TL;DR: Enable on servers with many players and/or low resources. Else disable for slightly better user experience.
+performance-mode: false  # IMPORTANT: READ THE ENTIRE ABOVE COMMENT BEFORE ENABLING THIS OPTION
+# Number of ticks between each bossbar update. Lower values = more updates = more performance impact. If negative, absolute value is used.
+update-ticks: 1
+# Maximum distance at which blocks and entities can be detected. Can alter performance negatively,
+# since the raytracing it uses (still not the RTX kind) will have to continue further before it finds a block or entity.
+# 0 or below makes it stick to the server's maximum reach distance, which is 5 by default and can be changed in the server.properties file.
+reach-distance: 0
+# Message shown to players when they join the server for the first time, explaining what WYLA is and how to disable it if they want to.
+# This message is only shown once per player, and can be disabled by setting this option to an empty string.
+initial-message: "This server uses WYLA to show to every user block and entity info of what they're looking at. If you already have a client-side mod that does this (eg. Jade), you can disable this by running the command `/wyla`. Re-running the same command re-enables it."
