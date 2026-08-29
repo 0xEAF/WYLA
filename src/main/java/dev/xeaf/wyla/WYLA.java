@@ -63,7 +63,7 @@ public class WYLA extends JavaPlugin implements Listener {
 
         Location eye = player.getEyeLocation();
         Vector direction = eye.getDirection();
-        System.out.println("Player reach distance: " + player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).getValue());
+
         RayTraceResult result = player.getWorld().rayTrace(
             eye, direction, reachDistance < 0
                     ? player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).getValue()
