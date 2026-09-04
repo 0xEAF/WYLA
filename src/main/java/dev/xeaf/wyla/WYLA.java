@@ -3,14 +3,17 @@ package dev.xeaf.wyla;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -30,7 +33,7 @@ import net.kyori.adventure.text.Component;
 import dev.xeaf.wyla.BossBarManager;
 
 public class WYLA extends JavaPlugin implements Listener {
-    private final BossBarManager bossBarManager = new BossBarManager();
+    private final BossBarManager bossBarManager = new BossBarManager(this);
     private final Map<UUID, BreakData> breaking = new ConcurrentHashMap<>();
     private PlayerConfig playerConfig;
     private boolean performanceMode;
@@ -56,20 +59,45 @@ public class WYLA extends JavaPlugin implements Listener {
             return false;
         }
 
+        try {
+            return doUpdateRay(player);
+        } catch (Exception e) {
+            /*getLogger().log(Level.WARNING, "[WYLA-DEBUG] updateRay threw an exception for "
+                    + player.getName() + ": " + e, e);*/
+            return true;
+        }
+    }
+
+    private boolean doUpdateRay(Player player) {
         if (!playerConfig.get(player)) {
-            bossBarManager.remove(player);
             return true;
         }
 
         Location eye = player.getEyeLocation();
         Vector direction = eye.getDirection();
 
+        double blockRange;
+        double entityRange;
+
+        if (reachDistance <= 0) {
+            AttributeInstance blockRangeAttr = player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE);
+            AttributeInstance entityRangeAttr = player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE);
+            blockRange = blockRangeAttr != null ? blockRangeAttr.getValue() : 4.5;
+            entityRange = entityRangeAttr != null ? entityRangeAttr.getValue() : 3.0;
+            /*getLogger().info("[WYLA-DEBUG] " + player.getName()
+                    + " using auto reach - blockRange=" + blockRange + ", entityRange=" + entityRange
+                    + " (config reach-distance=" + reachDistance + ")");*/
+        } else {
+            blockRange = reachDistance;
+            entityRange = reachDistance;
+        }
+
+        double maxDistance = Math.max(blockRange, entityRange);
+
         RayTraceResult result = player.getWorld().rayTrace(
-            eye, direction, reachDistance < 0
-                    ? player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).getValue()
-                    : reachDistance,
+            eye, direction, maxDistance,
             FluidCollisionMode.ALWAYS, false, 0.0,
-            entity -> entity != player
+            entity -> entity != player && !(entity instanceof Projectile)
         );
 
         Entity entity = null;
@@ -78,7 +106,20 @@ public class WYLA extends JavaPlugin implements Listener {
         if (result != null) {
             entity = result.getHitEntity();
             block = result.getHitBlock();
+            double hitDistance = result.getHitPosition().distance(eye.toVector());
+
+            if (entity != null && hitDistance > entityRange) {
+                entity = null;
+            }
+            
+            if (block != null && hitDistance > blockRange) {
+                block = null;
+            }
         }
+
+        /*getLogger().info("[WYLA-DEBUG] " + player.getName()
+                + " ray result -> entity=" + (entity != null ? entity.getType() : "none")
+                + ", block=" + (block != null ? block.getType() : "none"));*/
 
         if (entity != null) {
             String key = entity.getType().translationKey();
@@ -96,21 +137,41 @@ public class WYLA extends JavaPlugin implements Listener {
 
                 LivingEntity livingEntity = (LivingEntity) entity;
                 double health = livingEntity.getHealth();
-                double maxHealth = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-                float progress = (float) (health / maxHealth);
+                AttributeInstance maxHealthAttr = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+
+                if (maxHealthAttr == null) {
+                    /*getLogger().warning("[WYLA-DEBUG] " + entity.getType()
+                            + " has no GENERIC_MAX_HEALTH attribute, defaulting progress to 1.0");*/
+                    bossBarManager.update(player, name, 1.0f);
+                    return true;
+                }
+
+                double maxHealth = maxHealthAttr.getValue();
+                float progress = maxHealth > 0
+                        ? (float) Math.max(0.0, Math.min(1.0, health / maxHealth))
+                        : 1.0f;
+
+                /*getLogger().info("[WYLA-DEBUG] Calling bossBarManager.update() for "
+                        + player.getName() + " -> entity name, progress=" + progress);*/
                 bossBarManager.update(player, name, progress);
             } else {
+                /*getLogger().info("[WYLA-DEBUG] Calling bossBarManager.update() for "
+                        + player.getName() + " -> non-living entity, progress=1.0");*/
                 bossBarManager.update(player, name, 1.0f);
             }
         } else if (block != null) {
             String key = block.getType().translationKey();
             Component name = Component.translatable(key);
-            bossBarManager.update(player, name, 
-                breaking.containsKey(player.getUniqueId()) 
+            float progress = breaking.containsKey(player.getUniqueId())
                     ? 1.0f - breaking.get(player.getUniqueId()).progress()
-                    : 1.0f
-            );
+                    : 1.0f;
+
+            /*getLogger().info("[WYLA-DEBUG] Calling bossBarManager.update() for "
+                    + player.getName() + " -> block name, progress=" + progress);*/
+            bossBarManager.update(player, name, progress);
         } else {
+            /*getLogger().info("[WYLA-DEBUG] Calling bossBarManager.remove() for " + player.getName()
+                    + " (no entity/block hit)");*/
             bossBarManager.remove(player);
         }
 

@@ -4,7 +4,7 @@
   <groupId>dev.xeaf</groupId>
   <artifactId>WYLA</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <name>WYLA</name>
   <properties>
     <maven.compiler.release>21</maven.compiler.release>

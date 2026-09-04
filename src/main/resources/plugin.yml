@@ -1,5 +1,5 @@
 name: WYLA
-version: 1.0.0
+version: 1.0.1
 main: dev.xeaf.wyla.WYLA
 description: "See \"What You're Looking At\" without a client side mod"
 author: devdere

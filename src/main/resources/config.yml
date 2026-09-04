@@ -10,8 +10,9 @@ performance-mode: false  # IMPORTANT: READ THE ENTIRE ABOVE COMMENT BEFORE ENABL
 update-ticks: 1
 # Maximum distance at which blocks and entities can be detected. Can alter performance negatively,
 # since the raytracing it uses (still not the RTX kind) will have to continue further before it finds a block or entity.
-# 0 or below makes it stick to the server's maximum reach distance, which is 5 by default and can be changed in the server.properties file.
-reach-distance: 0
+# Below 0 makes it stick to the server's maximum reach distance, which is 5 by default and can be changed in the server.properties file.
+# Exactly 0 makes it INFINITE. DO NOT DO THAT UNLESS YOU KNOW WHAT YOU'RE DOING!!!
+reach-distance: -1  # PLEASE DO NOT PUT TO 0 UNLESS YOU KNOW WHAT YOU'RE DOING. IT WILL BREAK THE PLUGIN FOR MOST PLAYERS.
 # Message shown to players when they join the server for the first time, explaining what WYLA is and how to disable it if they want to.
 # This message is only shown once per player, and can be disabled by setting this option to an empty string.
 initial-message: "This server uses WYLA to show to every user block and entity info of what they're looking at. If you already have a client-side mod that does this (eg. Jade), you can disable this by running the command `/wyla`. Re-running the same command re-enables it."
